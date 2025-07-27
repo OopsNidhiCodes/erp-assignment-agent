@@ -1,6 +1,6 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
@@ -19,9 +19,10 @@ FROM_WHATSAPP = os.getenv("FROM_WHATSAPP")
 
 # ✅ Headless Chrome setup
 options = Options()
-options.add_argument('--headless')
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
+options.add_argument("--headless=new")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--disable-gpu")
 
 driver = webdriver.Chrome(options=options)
 wait = WebDriverWait(driver, 15)
@@ -47,27 +48,28 @@ try:
     print("🚀 Login submitted.")
     time.sleep(5)
 
-    # ✅ Navigate to LMS Dashboard
+    # ✅ Navigate to assignment section
     driver.get("https://erp.ppsu.ac.in/StudentPanel/LMS/LMS_ContentStudentDashboard.aspx")
     time.sleep(5)
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(5)
 
     pending_section = driver.find_element(By.ID, "ContentPlaceHolder1_divPendingAssignment")
-    message = pending_section.text.strip()
+    assignment_text = pending_section.text.strip()
 
-    print("📩 Pending Assignment Message:\n", message)
+    print("📩 Pending Assignment:\n", assignment_text)
 
-    # ✅ Send WhatsApp Message via Twilio
+    # ✅ Send WhatsApp Message
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
     client.messages.create(
         from_=FROM_WHATSAPP,
         to=TO_WHATSAPP,
-        body=f"📚 Pending Assignments:\n{message}"
+        body=f"📚 Pending Assignments:\n{assignment_text}"
     )
-    print("✅ WhatsApp Message Sent")
+    print("✅ WhatsApp message sent!")
 
 except Exception as e:
     print("❌ Error:", e)
 
-driver.quit()
+finally:
+    driver.quit()
