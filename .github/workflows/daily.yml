@@ -1,16 +1,23 @@
-name: Daily ERP Assignment Agent
+name: Daily Assignment Reminder
 
 on:
   schedule:
-    - cron: '30 11 * * *'  # 5:00 PM IST (UTC +5:30)
-  workflow_dispatch:  # allow manual trigger too
+    - cron: '30 11 * * *'  # 5:00 PM IST daily (11:30 UTC)
+  workflow_dispatch:
 
 jobs:
-  run-agent:
+  remind:
     runs-on: ubuntu-latest
+    env:
+      USERNAME_: ${{ secrets.USERNAME_ }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      TO_WHATSAPP: ${{ secrets.TO_WHATSAPP }}
+      FROM_WHATSAPP: ${{ secrets.FROM_WHATSAPP }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -19,15 +26,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Run ERP Agent
-        env:
-          USERNAME_: ${{ secrets.USERNAME_ }}
-          PASSWORD: ${{ secrets.PASSWORD }}
-          TO_WHATSAPP: ${{ secrets.TO_WHATSAPP }}
-          FROM_WHATSAPP: ${{ secrets.FROM_WHATSAPP }}
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      - name: Run automation script
         run: python main.py
