@@ -1,3 +1,4 @@
 selenium
 python-dotenv
 twilio
+undetected-chromedriver==3.5.3

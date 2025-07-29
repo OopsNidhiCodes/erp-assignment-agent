@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 import time
 from twilio.rest import Client
+import undetected_chromedriver as uc
 
 load_dotenv()
 
