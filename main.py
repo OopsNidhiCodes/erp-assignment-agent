@@ -47,29 +47,49 @@ try:
     login_button.click()
     print("🚀 Login submitted.")
     time.sleep(5)
-
-    # ✅ Navigate to assignment section
-    driver.get("https://erp.ppsu.ac.in/StudentPanel/LMS/LMS_ContentStudentDashboard.aspx")
-    time.sleep(5)
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(5)
-
-    pending_section = driver.find_element(By.ID, "ContentPlaceHolder1_divPendingAssignment")
-    assignment_text = pending_section.text.strip()
-
-    print("📩 Pending Assignment:\n", assignment_text)
-
-    # ✅ Send WhatsApp Message
-    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    client.messages.create(
-        from_=FROM_WHATSAPP,
-        to=TO_WHATSAPP,
-        body=f"📚 Pending Assignments:\n{assignment_text}"
-    )
-    print("✅ WhatsApp message sent!")
-
 except Exception as e:
-    print("❌ Error:", e)
+    print("❌ Error during login:", e)
+    driver.save_screenshot("login_debug_error.png")
+    driver.quit()
+    exit()
+    
+time.sleep(5)
+driver.get("https://erp.ppsu.ac.in/StudentPanel/LMS/LMS_ContentStudentDashboard.aspx")
+time.sleep(5)
+driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+time.sleep(2)
 
+# --- EXTRACT PENDING ASSIGNMENTS ---
+assignments = []
+try:
+    rows = driver.find_elements(By.XPATH, "//table[contains(@class, 'table')]/tbody/tr")
+    for row in rows:
+        columns = row.find_elements(By.TAG_NAME, "td")
+        if len(columns) >= 4:
+            subject = columns[1].text.strip()
+            assignment = columns[2].text.strip()
+            due_date = columns[3].text.strip().split("\n")[0]  # clean off extra lines
+            assignments.append(f"{subject} → {assignment}\n📅 Due: {due_date}")
+except Exception as e:
+    print("❌ Error fetching assignments:", e)
+
+driver.quit()
+
+# --- FORMAT & SEND WHATSAPP ---
+if assignments:
+    message_body = "📚 *Pending Assignments*\n\n" + "\n\n".join(assignments)
+else:
+    message_body = "✅ No pending assignments found!"
+
+try:
+    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    message = client.messages.create(
+        body=message_body,
+        from_=FROM_WHATSAPP,
+        to=TO_WHATSAPP
+    )
+    print("📩 WhatsApp message sent:", message.sid)
+except Exception as e:
+    print("❌ WhatsApp send failed:", e)
 finally:
     driver.quit()
