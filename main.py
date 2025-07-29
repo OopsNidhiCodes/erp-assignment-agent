@@ -1,13 +1,11 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
+from twilio.rest import Client
 import os
 import time
-from twilio.rest import Client
-import undetected_chromedriver as uc
 
 load_dotenv()
 
@@ -18,19 +16,18 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TO_WHATSAPP = os.getenv("TO_WHATSAPP")
 FROM_WHATSAPP = os.getenv("FROM_WHATSAPP")
 
-# ✅ Headless Chrome setup
-options = Options()
+# ✅ Undetected headless Chrome setup
+options = uc.ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-gpu")
 
-driver = webdriver.Chrome(options=options)
-wait = WebDriverWait(driver, 15)
+driver = uc.Chrome(options=options)
+wait = WebDriverWait(driver, 20)
 
+# --- LOGIN ---
 driver.get("https://erp.ppsu.ac.in/Login.aspx")
-
-# Step 1: Click "Student"
 student_radio = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='Student']")))
 driver.execute_script("arguments[0].click();", student_radio)
 print("✅ Clicked Student")
@@ -53,14 +50,14 @@ except Exception as e:
     driver.save_screenshot("login_debug_error.png")
     driver.quit()
     exit()
-    
-time.sleep(5)
-driver.get("https://erp.ppsu.ac.in/StudentPanel/LMS/LMS_ContentStudentDashboard.aspx")
-time.sleep(5)
-driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-time.sleep(2)
 
-# --- EXTRACT PENDING ASSIGNMENTS ---
+# --- NAVIGATE TO LMS PAGE ---
+driver.get("https://erp.ppsu.ac.in/StudentPanel/LMS/LMS_ContentStudentDashboard.aspx")
+time.sleep(7)
+driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+time.sleep(3)
+
+# --- EXTRACT ASSIGNMENTS ---
 assignments = []
 try:
     rows = driver.find_elements(By.XPATH, "//table[contains(@class, 'table')]/tbody/tr")
@@ -69,14 +66,14 @@ try:
         if len(columns) >= 4:
             subject = columns[1].text.strip()
             assignment = columns[2].text.strip()
-            due_date = columns[3].text.strip().split("\n")[0]  # clean off extra lines
+            due_date = columns[3].text.strip().split("\n")[0]
             assignments.append(f"{subject} → {assignment}\n📅 Due: {due_date}")
 except Exception as e:
     print("❌ Error fetching assignments:", e)
 
 driver.quit()
 
-# --- FORMAT & SEND WHATSAPP ---
+# --- SEND WHATSAPP MESSAGE ---
 if assignments:
     message_body = "📚 *Pending Assignments*\n\n" + "\n\n".join(assignments)
 else:
@@ -92,5 +89,3 @@ try:
     print("📩 WhatsApp message sent:", message.sid)
 except Exception as e:
     print("❌ WhatsApp send failed:", e)
-finally:
-    driver.quit()
