@@ -2,7 +2,7 @@ name: Daily Assignment Reminder
 
 on:
   schedule:
-    - cron: '30 11 * * *'  # 5:00 PM IST daily (11:30 UTC)
+    - cron: '30 11 * * *'  # Runs every day at 5:00 PM IST (11:30 AM UTC)
   workflow_dispatch:
 
 jobs:
@@ -25,8 +25,15 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install Chrome
+        run: |
+          sudo apt update
+          sudo apt install -y wget unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+
+      - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Run automation script
+      - name: Run assignment reminder script
         run: python main.py
