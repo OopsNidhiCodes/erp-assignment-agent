@@ -1,4 +1,6 @@
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -7,8 +9,8 @@ from twilio.rest import Client
 import os
 import time
 
+# Load environment variables
 load_dotenv()
-
 USERNAME = os.getenv("USERNAME_")
 PASSWORD = os.getenv("PASSWORD")
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
@@ -16,14 +18,16 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TO_WHATSAPP = os.getenv("TO_WHATSAPP")
 FROM_WHATSAPP = os.getenv("FROM_WHATSAPP")
 
-# ✅ Undetected headless Chrome setup
-options = uc.ChromeOptions()
-# options.add_argument("--headless=new")
+# ✅ Configure Chrome options
+options = Options()
+# options.add_argument("--headless=new")  # Uncomment for headless mode
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-gpu")
 
-driver = uc.Chrome(options=options)
+# ✅ Set path to chromedriver
+CHROME_PATH = "chromedriver.exe"  # or full path if needed
+driver = webdriver.Chrome(service=Service(CHROME_PATH), options=options)
 wait = WebDriverWait(driver, 20)
 
 # --- LOGIN ---
@@ -74,10 +78,10 @@ except Exception as e:
 driver.quit()
 
 # --- SEND WHATSAPP MESSAGE ---
-if assignments:
-    message_body = "📚 *Pending Assignments*\n\n" + "\n\n".join(assignments)
-else:
-    message_body = "✅ No pending assignments found!"
+message_body = (
+    "📚 *Pending Assignments*\n\n" + "\n\n".join(assignments)
+    if assignments else "✅ No pending assignments found!"
+)
 
 try:
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
